@@ -1,0 +1,43 @@
+﻿C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\MSBuild\Microsoft\VC\v160\Microsoft.CppBuild.targets(513,5): warning MSB8028: El directorio intermedio (x64\Release\) contiene archivos compartidos de otro proyecto (strings.vcxproj). Esto puede dar lugar a un comportamiento incorrecto de limpieza y recompilación.
+  basics.cpp
+  process_strings.cpp
+C:\Users\luamp\Downloads\xxstrings\strings\string_hashes.h(10,22): warning C4996: 'std::tr1': warning STL4002: The non-Standard std::tr1 namespace and TR1-only machinery are deprecated and will be REMOVED. You can define _SILENCE_TR1_NAMESPACE_DEPRECATION_WARNING to acknowledge that you have received this warning.
+C:\Users\luamp\Downloads\xxstrings\strings\process_strings.cpp(32,3): warning C4996: 'wcstombs': This function or variable may be unsafe. Consider using wcstombs_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
+C:\Users\luamp\Downloads\xxstrings\strings\process_strings.cpp(106,24): warning C4477: 'fprintf' : la cadena de formato '%016llX' requiere un argumento de tipo 'unsigned __int64', pero el argumento variádico 1 tiene el tipo 'PVOID'
+C:\Users\luamp\Downloads\xxstrings\strings\process_strings.cpp(106,24): warning C4477: 'fprintf' : la cadena de formato '%i' requiere un argumento de tipo 'int', pero el argumento variádico 3 tiene el tipo '__int64'
+C:\Users\luamp\Downloads\xxstrings\strings\process_strings.cpp(106,24): message : considere el uso de ' %lli' en la cadena de formato
+C:\Users\luamp\Downloads\xxstrings\strings\process_strings.cpp(106,24): message : considere el uso de ' %Ii' en la cadena de formato
+C:\Users\luamp\Downloads\xxstrings\strings\process_strings.cpp(106,24): message : considere el uso de ' %I64i' en la cadena de formato
+C:\Users\luamp\Downloads\xxstrings\strings\process_strings.cpp(106,24): warning C4477: 'fprintf' : la cadena de formato '%i' requiere un argumento de tipo 'int', pero el argumento variádico 4 tiene el tipo 'SIZE_T'
+C:\Users\luamp\Downloads\xxstrings\strings\process_strings.cpp(106,24): message : considere el uso de ' %lli' en la cadena de formato
+C:\Users\luamp\Downloads\xxstrings\strings\process_strings.cpp(106,24): message : considere el uso de ' %Ii' en la cadena de formato
+C:\Users\luamp\Downloads\xxstrings\strings\process_strings.cpp(106,24): message : considere el uso de ' %I64i' en la cadena de formato
+C:\Users\luamp\Downloads\xxstrings\strings\process_strings.cpp(109,35): warning C4244: 'argumento': conversión de '__int64' a 'unsigned int'; posible pérdida de datos
+C:\Users\luamp\Downloads\xxstrings\strings\process_strings.cpp(112,23): warning C4477: 'fprintf' : la cadena de formato '%016llX' requiere un argumento de tipo 'unsigned __int64', pero el argumento variádico 1 tiene el tipo 'PVOID'
+C:\Users\luamp\Downloads\xxstrings\strings\process_strings.cpp(120,22): warning C4477: 'fprintf' : la cadena de formato '%x' requiere un argumento de tipo 'unsigned int', pero el argumento variádico 1 tiene el tipo 'SIZE_T'
+C:\Users\luamp\Downloads\xxstrings\strings\process_strings.cpp(120,22): message : considere el uso de ' %llx' en la cadena de formato
+C:\Users\luamp\Downloads\xxstrings\strings\process_strings.cpp(120,22): message : considere el uso de ' %Ix' en la cadena de formato
+C:\Users\luamp\Downloads\xxstrings\strings\process_strings.cpp(120,22): message : considere el uso de ' %I64x' en la cadena de formato
+C:\Users\luamp\Downloads\xxstrings\strings\process_strings.cpp(156,24): warning C4477: 'fprintf' : la cadena de formato '%016llX' requiere un argumento de tipo 'unsigned __int64', pero el argumento variádico 1 tiene el tipo 'PVOID'
+C:\Users\luamp\Downloads\xxstrings\strings\process_strings.cpp(156,24): warning C4477: 'fprintf' : la cadena de formato '%i' requiere un argumento de tipo 'int', pero el argumento variádico 3 tiene el tipo '__int64'
+C:\Users\luamp\Downloads\xxstrings\strings\process_strings.cpp(156,24): message : considere el uso de ' %lli' en la cadena de formato
+C:\Users\luamp\Downloads\xxstrings\strings\process_strings.cpp(156,24): message : considere el uso de ' %Ii' en la cadena de formato
+C:\Users\luamp\Downloads\xxstrings\strings\process_strings.cpp(156,24): message : considere el uso de ' %I64i' en la cadena de formato
+C:\Users\luamp\Downloads\xxstrings\strings\process_strings.cpp(156,24): warning C4477: 'fprintf' : la cadena de formato '%i' requiere un argumento de tipo 'int', pero el argumento variádico 4 tiene el tipo 'SIZE_T'
+C:\Users\luamp\Downloads\xxstrings\strings\process_strings.cpp(156,24): message : considere el uso de ' %lli' en la cadena de formato
+C:\Users\luamp\Downloads\xxstrings\strings\process_strings.cpp(156,24): message : considere el uso de ' %Ii' en la cadena de formato
+C:\Users\luamp\Downloads\xxstrings\strings\process_strings.cpp(156,24): message : considere el uso de ' %I64i' en la cadena de formato
+C:\Users\luamp\Downloads\xxstrings\strings\process_strings.cpp(159,35): warning C4244: 'argumento': conversión de '__int64' a 'unsigned int'; posible pérdida de datos
+C:\Users\luamp\Downloads\xxstrings\strings\process_strings.cpp(162,23): warning C4477: 'fprintf' : la cadena de formato '%016llX' requiere un argumento de tipo 'unsigned __int64', pero el argumento variádico 1 tiene el tipo 'PVOID'
+C:\Users\luamp\Downloads\xxstrings\strings\process_strings.cpp(170,22): warning C4477: 'fprintf' : la cadena de formato '%x' requiere un argumento de tipo 'unsigned int', pero el argumento variádico 1 tiene el tipo 'SIZE_T'
+C:\Users\luamp\Downloads\xxstrings\strings\process_strings.cpp(170,22): message : considere el uso de ' %llx' en la cadena de formato
+C:\Users\luamp\Downloads\xxstrings\strings\process_strings.cpp(170,22): message : considere el uso de ' %Ix' en la cadena de formato
+C:\Users\luamp\Downloads\xxstrings\strings\process_strings.cpp(170,22): message : considere el uso de ' %I64x' en la cadena de formato
+C:\Users\luamp\Downloads\xxstrings\strings\process_strings.cpp(106,136): warning C4996: 'strerror': This function or variable may be unsafe. Consider using strerror_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
+C:\Users\luamp\Downloads\xxstrings\strings\process_strings.cpp(156,136): warning C4996: 'strerror': This function or variable may be unsafe. Consider using strerror_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
+  Generando código
+  Previous IPDB and IOBJ mismatch, fall back to full compilation.
+C:\Users\luamp\Downloads\xxstrings\strings\process_strings.cpp(57): warning C4715: 'process_strings::dump_process': no todas las rutas de acceso de control devuelven un valor
+  All 105 functions were compiled because no usable IPDB/IOBJ from previous compilation was found.
+  Generación de código finalizada
+  strings.vcxproj -> C:\Users\luamp\Downloads\xxstrings\x64\Release\xxstrings.exe
