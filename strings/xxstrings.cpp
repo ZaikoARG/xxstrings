@@ -17,7 +17,7 @@
 using namespace std;
 
 
-BOOL Is64BitWindows()
+static BOOL Is64BitWindows()
 {
 	#if defined(_WIN64)
 		return TRUE;  // 64-bit programs run only on Win64
@@ -31,7 +31,7 @@ BOOL Is64BitWindows()
 	#endif
 }
 
-bool isElevated(HANDLE h_Process)
+static bool isElevated(HANDLE h_Process)
 {
 	HANDLE h_Token;
 	TOKEN_ELEVATION t_TokenElevation;
@@ -60,7 +60,7 @@ bool isElevated(HANDLE h_Process)
 
 
 
-bool getMaximumPrivileges(HANDLE h_Process)
+static bool getMaximumPrivileges(HANDLE h_Process)
 {
 	HANDLE h_Token;
 	DWORD dw_TokenLength;
@@ -71,7 +71,7 @@ bool getMaximumPrivileges(HANDLE h_Process)
 		if( GetTokenInformation(h_Token, TokenPrivileges, privilages,sizeof(TOKEN_PRIVILEGES)*100,&dw_TokenLength) )
 		{
 			// Enable all privileges
-			for( int i = 0; i < privilages->PrivilegeCount; i++ )
+			for (size_t i = 0; i < static_cast<size_t>(privilages->PrivilegeCount); i++)
 			{
 				privilages->Privileges[i].Attributes = SE_PRIVILEGE_ENABLED;
 			}
@@ -263,20 +263,19 @@ int _tmain(int argc, _TCHAR* argv[])
 					
 					// Extract the pid from the string
 					unsigned int PID;
-					if( (isHex && swscanf(filter, L"%x", &PID) > 0) ||
-						(!isHex && swscanf(filter, L"%i", &PID) > 0))
+					if ((isHex && swscanf_s(filter, L"%x", &PID) > 0) ||
+						(!isHex && swscanf_s(filter, L"%i", &PID) > 0))
 					{
 						// Successfully parsed the PID
-						
 						// Parse the process
 						process->dump_process(PID, options.ecoMode, options.pagination);
-
-						
-					}else{
+					}
+					else
+					{
 						fwprintf(stderr, L"Failed to parse filter argument as a valid PID: %s.\n", filter);
 					}
 				}else{
-					fwprintf(stderr, L"Error. No Process ID was specified.\n", filter);
+					fwprintf(stderr, L"Error. No Process ID was specified.\n");
 				}
 			}
 
