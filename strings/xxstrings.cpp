@@ -64,26 +64,27 @@ static bool getMaximumPrivileges(HANDLE h_Process)
 {
 	HANDLE h_Token;
 	DWORD dw_TokenLength;
-	if( OpenProcessToken(h_Process, TOKEN_READ | TOKEN_QUERY | TOKEN_ADJUST_PRIVILEGES , &h_Token) )
+	if (OpenProcessToken(h_Process, TOKEN_READ | TOKEN_QUERY | TOKEN_ADJUST_PRIVILEGES, &h_Token))
 	{
-		// Read the old token privileges
-		TOKEN_PRIVILEGES* privilages = new TOKEN_PRIVILEGES[100];
-		if( GetTokenInformation(h_Token, TokenPrivileges, privilages,sizeof(TOKEN_PRIVILEGES)*100,&dw_TokenLength) )
-		{
-			// Enable all privileges
-			for (size_t i = 0; i < static_cast<size_t>(privilages->PrivilegeCount); i++)
-			{
-				privilages->Privileges[i].Attributes = SE_PRIVILEGE_ENABLED;
-			}
-			
-			// Adjust the privilges
-			if(AdjustTokenPrivileges( h_Token, false, privilages, sizeof(TOKEN_PRIVILEGES)*100, NULL, NULL  ))
-			{
-				delete[] privilages;
-				return true;
-			}
-		}
-		delete[] privilages;
+	    // Read the old token privileges
+	    DWORD dw_Size = sizeof(TOKEN_PRIVILEGES) + sizeof(LUID_AND_ATTRIBUTES) * 100;
+	    TOKEN_PRIVILEGES* privileges = (TOKEN_PRIVILEGES*)new BYTE[dw_Size];
+	    if (GetTokenInformation(h_Token, TokenPrivileges, privileges, dw_Size, &dw_TokenLength))
+	    {
+	        // Enable all privileges
+	        for (DWORD i = 0; i < privileges->PrivilegeCount; i++)
+	        {
+	            privileges->Privileges[i].Attributes = SE_PRIVILEGE_ENABLED;
+	        }
+	
+	        // Adjust the privileges
+	        if (AdjustTokenPrivileges(h_Token, FALSE, privileges, dw_Size, NULL, NULL))
+	        {
+	            delete[] privileges;
+	            return true;
+	        }
+	    }
+	    delete[] privileges;
 	}
 	return false;
 }
@@ -237,7 +238,7 @@ int _tmain(int argc, _TCHAR* argv[])
 				fprintf(stderr, "WARNING: You are running a 32-bit version on a 64-bit system.\n\n");
 			}
 
-			// Elevate strings2 to the maximum privilges
+			// Elevate strings2 to the maximum privileges
 			getMaximumPrivileges( GetCurrentProcess() );
 
 			// Create a process string dump class
