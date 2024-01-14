@@ -2,12 +2,12 @@
 #include <iostream>
 #include <string>
 #include <unordered_set>
+#include <functional>
 #include "DynArray.h"
 #include <stdio.h>
 #include <io.h>
 
 using namespace std;
-using namespace std::tr1;
 
  // 10 mb
 #define START_SIZE 10000000
@@ -63,11 +63,14 @@ class string_hashes
 
 public:
 	string_hashes(void)
+		: _data_block_start(nullptr),
+		_data_block_cur(nullptr),
+		_data_block_end(nullptr)
 	{
 		_data_block_start = new char[START_SIZE];
 		_data_block_cur = _data_block_start;
 		_data_block_end = _data_block_start + START_SIZE - 1;
-		blocks.Add( _data_block_start );
+		blocks.Add(_data_block_start);
 
 		_LocalHashset.rehash(HASH_SIZE);
 		_GlobalHashset.rehash(HASH_SIZE);

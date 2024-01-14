@@ -378,8 +378,13 @@ bool string_parser::parse_stream(FILE* fh, LPCSTR datasource)
 		delete[] buffer;
 		return true;
 	}else{
-		// Failed to open file
-		fprintf(stderr,"Invalid stream: %s.\n", strerror(errno));
+		char error_message[256];
+		if (strerror_s(error_message, sizeof(error_message), errno) == 0) {
+			fprintf(stderr, "Invalid stream: %s.\n", error_message);
+		}
+		else {
+			fprintf(stderr, "Failed to get error message for errno %d.\n", errno);
+		}
 		return false;
 	}
 }

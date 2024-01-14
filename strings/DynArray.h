@@ -104,22 +104,23 @@ void DynArray<el>::SetSize(unsigned int newsize)
 {
     size = newsize;
 
-	if (size != 0)
-	{
-		// change array memory size 
-		// if new size is larger than current 
-		// or new size is less then half of the current 
-		if ((size > realsize) || (size < realsize/2))
-		{
-	    	realsize = size;
-	    	array = (el *)realloc(array, sizeof(el)*size);
+    if (size != 0)
+    {
+        // change array memory size
+        // if new size is larger than current
+        // or new size is less than half of the current
+        if ((size > realsize) || (size < realsize / 2))
+        {
+            el* tempArray = (el*)realloc(array, sizeof(el) * size);
+            if (tempArray == NULL)
+                throw MEMFAIL;  // Handle memory allocation failure
 
-			if (array == NULL)
-				throw MEMFAIL;
-		}
-	}
-	else
-		Clear();
+            array = tempArray;  // Only assign if realloc was successful
+            realsize = size;
+        }
+    }
+    else
+        Clear();
 }
 
 template <class el>
@@ -160,21 +161,22 @@ el& DynArray<el>::operator [] (unsigned int index)
 }
 
 template <class el>
-void DynArray<el>::Add(const el &item)
+void DynArray<el>::Add(const el& item)
 {
     size++;
 
     if (size > realsize)
     {
-		realsize *= dyn_array_mult;
-		
-		array = (el *)realloc(array, sizeof(el)*realsize);
+        realsize *= dyn_array_mult;
 
-		if (array == NULL)
-			throw MEMFAIL;
+        el* tempArray = (el*)realloc(array, sizeof(el) * realsize);
+        if (tempArray == NULL)
+            throw MEMFAIL;  // Handle memory allocation failure
+
+        array = tempArray;  // Only assign if realloc was successful
     }
 
-	array[size-1] = item;
+    array[size - 1] = item;
 }
 
 #endif // ifndef _AE_DYNARRAY_H_INCLUDED_
