@@ -1,43 +1,45 @@
 #include "StdAfx.h"
 #include "basics.h"
+#include <iostream>
+#include <memory>
+#include <stdexcept>
+#include <string>
 
-void PrintLastError(LPTSTR lpszFunction)
-{
-    // Retrieve the system error message for the last-error code
-    LPVOID lpMsgBuf;
-    LPTSTR lpDisplayBuf = NULL; // Initialize lpDisplayBuf to NULL
+class ErrorPrinter {
+public:
+    virtual void printError(DWORD errorCode, const std::wstring& functionName) = 0;
+    virtual ~ErrorPrinter() {}
+};
+
+class ConsoleErrorPrinter : public ErrorPrinter {
+public:
+    void printError(DWORD errorCode, const std::wstring& functionName) override {
+        LPVOID lpMsgBuf;
+        FormatMessage(
+            FORMAT_MESSAGE_ALLOCATE_BUFFER |
+            FORMAT_MESSAGE_FROM_SYSTEM |
+            FORMAT_MESSAGE_IGNORE_INSERTS,
+            nullptr,
+            errorCode,
+            MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
+            (LPTSTR)&lpMsgBuf,
+            0, nullptr);
+
+        std::wstring errorMessage = L"";
+        errorMessage += functionName;
+        errorMessage += L" failed with error ";
+        errorMessage += std::to_wstring(errorCode);
+        errorMessage += L": ";
+        errorMessage += static_cast<LPTSTR>(lpMsgBuf);
+
+        std::wcerr << errorMessage << std::endl;
+
+        LocalFree(lpMsgBuf);
+    }
+};
+
+void PrintLastError(const std::wstring& functionName) {
     DWORD dw = GetLastError();
-
-    FormatMessage(
-        FORMAT_MESSAGE_ALLOCATE_BUFFER |
-        FORMAT_MESSAGE_FROM_SYSTEM |
-        FORMAT_MESSAGE_IGNORE_INSERTS,
-        NULL,
-        dw,
-        MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
-        (LPTSTR)&lpMsgBuf,
-        0, NULL);
-
-    // Allocate memory for the display buffer and check for allocation success
-    lpDisplayBuf = (LPTSTR)LocalAlloc(LMEM_ZEROINIT,
-        (lstrlen((LPCTSTR)lpMsgBuf) + lstrlen((LPCTSTR)lpszFunction) + 40) * sizeof(TCHAR));
-
-    if (lpDisplayBuf != NULL) {
-        // Format and print the error message
-        StringCchPrintf(lpDisplayBuf,
-            LocalSize(lpDisplayBuf) / sizeof(TCHAR),
-            TEXT("%s failed with error %d: %s"),
-            lpszFunction, dw, (LPCTSTR)lpMsgBuf);  // Corrected the argument type
-
-        fwprintf(stderr, lpDisplayBuf);
-
-        // Free allocated memory
-        LocalFree(lpDisplayBuf);
-    }
-    else {
-        // Handle the case when memory allocation fails
-        fwprintf(stderr, TEXT("Failed to allocate memory for error message."));
-    }
-
-    LocalFree(lpMsgBuf);
+    std::unique_ptr<ErrorPrinter> errorPrinter = std::make_unique<ConsoleErrorPrinter>();
+    errorPrinter->printError(dw, functionName);
 }
