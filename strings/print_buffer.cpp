@@ -1,109 +1,73 @@
-#include "StdAfx.h"
-#include "print_buffer.h"
+#include <iostream>
+#include <memory>
+#include <cstring>
+#include <cstdio>
 
-print_buffer::print_buffer(int buffer_size)
-{
-	this->buffer_size = buffer_size;
-	this->buffer = new char[buffer_size];
-	this->space_used = 0;
-}
+class PrintBuffer {
+public:
+    PrintBuffer(int buffer_size) : buffer_size(buffer_size), space_used(0), buffer(std::make_unique<char[]>(buffer_size)) {}
 
-void print_buffer::addString(char* string, int length)
-{
-	// Digest the buffer if it is full
-	if( space_used + length + 1 >= buffer_size )
-		digest();
+    virtual ~PrintBuffer() {
+        flush();
+    }
 
-	// Copy the string if there is room
-	if( space_used + length + 1 >= buffer_size )
-	{
-		// Digest this string without buffering it
-		fwrite(string, length, 1, stdout);
-	}else{
-		// Add it to the buffer
-		memcpy( buffer + space_used, string, length );
-		space_used += length;
-		buffer[space_used] = 0;
-	}
-}
+    void addString(const char* string) {
+        int length = std::strlen(string);
+        addString(string, length);
+    }
 
-void print_buffer::addString(char* string)
-{
-	int length = strlen(string);
-	addString(string, length);
-}
+    void addStrings(const char* strings[]) {
+        for (int i = 0; strings[i] != nullptr; ++i)
+            addString(strings[i]);
+    }
 
-void print_buffer::addStrings(char* string1, char* string2, char* string3, char* string4, char* string5)
-{
-	addString(string1);
-	addString(string2);
-	addString(string3);
-	addString(string4);
-	addString(string5);
-}
+    virtual void addString(const char* string, int length) {
+        if (space_used + length >= buffer_size)
+            flush();
 
-void print_buffer::addStrings(char* string1, char* string2, char* string3, char* string4)
-{
-	addString(string1);
-	addString(string2);
-	addString(string3);
-	addString(string4);
-}
+        if (length >= buffer_size) {
+            std::fwrite(string, length, 1, stdout);
+            std::fflush(stdout);
+        }
+        else {
+            std::memcpy(buffer.get() + space_used, string, length);
+            space_used += length;
+            buffer[space_used] = '\0';
+        }
+    }
 
-void print_buffer::addStrings(char* string1, char* string2, char* string3)
-{
-	addString(string1);
-	addString(string2);
-	addString(string3);
-}
+    virtual void addLine(const char* string) {
+        addString(string, std::strlen(string));
+        addString("\r\n", 2);
+    }
 
-void print_buffer::addStrings(char* string1, char* string2)
-{
-	addString(string1);
-	addString(string2);
-}
+    virtual void flush() {
+        if (space_used > 0) {
+            std::fwrite(buffer.get(), 1, space_used, stdout);
+            std::fflush(stdout);
+            space_used = 0;
+        }
+    }
 
-void print_buffer::addLine(char* string, int length)
-{
-	// Digest the buffer if it is full
-	if( space_used + length + 3 >= buffer_size )
-		digest();
+protected:
+    int buffer_size;
+    int space_used;
+    std::unique_ptr<char[]> buffer;
+};
 
-	// Copy the string if there is room
-	if( space_used + length + 3 >= buffer_size )
-	{
-		// Digest this string without buffering it
-		printf( "%s", string );
-	}else{
-		// Add it to the buffer
-		memcpy( buffer + space_used, string, length );
-		space_used += length + 2;
-		buffer[space_used - 2] = '\r';
-		buffer[space_used - 1] = '\n';
-		buffer[space_used] = 0;
-	}
-}
+class BufferedPrinter : public PrintBuffer {
+public:
+    BufferedPrinter(int buffer_size) : PrintBuffer(buffer_size) {}
 
-void print_buffer::addLine(char* string)
-{
-	int length = strlen(string);
-	addLine(string, length);
-}
+    void addString(const char* string, int length) override {
+        PrintBuffer::addString(string, length);
+        if (space_used >= buffer_size / 2)
+            flush();
+    }
 
-void print_buffer::digest()
-{
-	if( space_used > 0 )
-	{
-		// Print the current buffer
-		fwrite( buffer, 1, space_used, stdout);
-		fflush( stdout );
-		buffer[0] = 0;
-		space_used = 0;
-	}
-}
-
-print_buffer::~print_buffer(void)
-{
-	digest();
-	delete[] buffer;
-}
+    void addLine(const char* string) override {
+        PrintBuffer::addLine(string);
+        if (space_used >= buffer_size / 2)
+            flush();
+    }
+};
