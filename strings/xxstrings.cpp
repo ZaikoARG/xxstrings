@@ -16,38 +16,30 @@
 
 using namespace std;
 
-
-static BOOL Is64BitWindows()
-{
-	#if defined(_WIN64)
-		return TRUE;  // 64-bit programs run only on Win64
-	#elif defined(_WIN32)
-		// 32-bit programs run on both 32-bit and 64-bit Windows
-		// so must sniff
-		BOOL f64 = FALSE;
-		return IsWow64Process(GetCurrentProcess(), &f64) && f64;
-	#else
-		return FALSE; // Win64 does not support Win16
-	#endif
+static BOOL Is64BitWindows() {
+#if defined(_WIN64)
+	return TRUE;
+#elif defined(_WIN32)
+	BOOL isWow64 = FALSE;
+	return IsWow64Process(GetCurrentProcess(), &isWow64) && isWow64;
+#else
+	return FALSE;
+#endif
 }
 
-static bool isElevated(HANDLE h_Process)
-{
+static bool isElevated(HANDLE h_Process) {
 	HANDLE h_Token;
 	TOKEN_ELEVATION t_TokenElevation;
-    TOKEN_ELEVATION_TYPE e_ElevationType;
+	TOKEN_ELEVATION_TYPE e_ElevationType;
 	DWORD dw_TokenLength;
-	
-	if( OpenProcessToken(h_Process, TOKEN_READ | TOKEN_QUERY | TOKEN_ADJUST_PRIVILEGES , &h_Token) )
-	{
-		if(GetTokenInformation(h_Token,TokenElevation,&t_TokenElevation,sizeof(t_TokenElevation),&dw_TokenLength))
-		{
-			if(t_TokenElevation.TokenIsElevated != 0)
-			{
-				if(GetTokenInformation(h_Token,TokenElevationType,&e_ElevationType,sizeof(e_ElevationType),&dw_TokenLength))
-				{
-					if(e_ElevationType == TokenElevationTypeFull || e_ElevationType == TokenElevationTypeDefault)
-					{
+
+	if (OpenProcessToken(h_Process, TOKEN_READ | TOKEN_QUERY | TOKEN_ADJUST_PRIVILEGES, &h_Token)) {
+		std::unique_ptr<TOKEN_ELEVATION> tokenElevation(new TOKEN_ELEVATION());
+		if (GetTokenInformation(h_Token, TokenElevation, tokenElevation.get(), sizeof(TOKEN_ELEVATION), &dw_TokenLength)) {
+			if (tokenElevation->TokenIsElevated != 0) {
+				std::unique_ptr<TOKEN_ELEVATION_TYPE> elevationType(new TOKEN_ELEVATION_TYPE());
+				if (GetTokenInformation(h_Token, TokenElevationType, elevationType.get(), sizeof(TOKEN_ELEVATION_TYPE), &dw_TokenLength)) {
+					if (*elevationType == TokenElevationTypeFull || *elevationType == TokenElevationTypeDefault) {
 						return true;
 					}
 				}
@@ -55,36 +47,24 @@ static bool isElevated(HANDLE h_Process)
 		}
 	}
 
-    return false;
+	return false;
 }
 
-
-
-static bool getMaximumPrivileges(HANDLE h_Process)
-{
+static bool getMaximumPrivileges(HANDLE h_Process) {
 	HANDLE h_Token;
 	DWORD dw_TokenLength;
-	if (OpenProcessToken(h_Process, TOKEN_READ | TOKEN_QUERY | TOKEN_ADJUST_PRIVILEGES, &h_Token))
-	{
-	    // Read the old token privileges
-	    DWORD dw_Size = sizeof(TOKEN_PRIVILEGES) + sizeof(LUID_AND_ATTRIBUTES) * 100;
-	    TOKEN_PRIVILEGES* privileges = (TOKEN_PRIVILEGES*)new BYTE[dw_Size];
-	    if (GetTokenInformation(h_Token, TokenPrivileges, privileges, dw_Size, &dw_TokenLength))
-	    {
-	        // Enable all privileges
-	        for (DWORD i = 0; i < privileges->PrivilegeCount; i++)
-	        {
-	            privileges->Privileges[i].Attributes = SE_PRIVILEGE_ENABLED;
-	        }
-	
-	        // Adjust the privileges
-	        if (AdjustTokenPrivileges(h_Token, FALSE, privileges, dw_Size, NULL, NULL))
-	        {
-	            delete[] privileges;
-	            return true;
-	        }
-	    }
-	    delete[] privileges;
+	if (OpenProcessToken(h_Process, TOKEN_READ | TOKEN_QUERY | TOKEN_ADJUST_PRIVILEGES, &h_Token)) {
+		DWORD dw_Size = sizeof(TOKEN_PRIVILEGES) + sizeof(LUID_AND_ATTRIBUTES) * 100;
+		std::unique_ptr<BYTE[]> buffer(new BYTE[dw_Size]);
+		TOKEN_PRIVILEGES* privileges = reinterpret_cast<TOKEN_PRIVILEGES*>(buffer.get());
+		if (GetTokenInformation(h_Token, TokenPrivileges, privileges, dw_Size, &dw_TokenLength)) {
+			for (DWORD i = 0; i < privileges->PrivilegeCount; i++) {
+				privileges->Privileges[i].Attributes = SE_PRIVILEGE_ENABLED;
+			}
+			if (AdjustTokenPrivileges(h_Token, FALSE, privileges, dw_Size, nullptr, nullptr)) {
+				return true;
+			}
+		}
 	}
 	return false;
 }
@@ -95,7 +75,7 @@ int _tmain(int argc, _TCHAR* argv[])
 	//setvbuf(stdout, buf, _IOFBF, sizeof(buf));
 
 	// Process the flags	
-	WCHAR* filter = NULL;
+	WCHAR* filter = nullptr;
 	bool flagHelp = false;
 	bool flagHeader = true;
 	bool flagFile = false;
@@ -105,7 +85,7 @@ int _tmain(int argc, _TCHAR* argv[])
 	bool flagRawOnly = false;
 	bool flagAsciiOnly = false;
 	bool flagUnicodeOnly = false;
-	bool pipedInput = !_isatty( _fileno( stdin ) );
+	bool pipedInput = !_isatty(_fileno(stdin));
 	bool flagPidDump = false;
 	bool flagSystemDump = false;
 	bool flagRecursive = false;
@@ -136,7 +116,6 @@ int _tmain(int argc, _TCHAR* argv[])
 		{
 			if(  i + 1 < argc )
 			{
-				// Try to parse the number of characters
 				int result = _wtoi(argv[i+1]);
 				if( result >= 3 )
 				{
@@ -151,21 +130,18 @@ int _tmain(int argc, _TCHAR* argv[])
 				exit(0);
 			}
 		}else{
-			// This is an unassigned argument
 			if( filter == NULL )
 			{
 				filter = argv[i];
 			}
 			else
 			{
-				// This argument is an error, we already found our filter.
 				fprintf(stderr,"Failed to parse argument number %i, '%S'.\n", i, argv[i]);
 				exit(0);
 			}
 		}
 	}
 
-	// Fill out the options structure based on the flags
 	STRING_OPTIONS options;
 	options.pagination = true;
 	options.ecoMode = false;
@@ -173,121 +149,90 @@ int _tmain(int argc, _TCHAR* argv[])
 	options.printUnicodeOnly = false;
 	options.printNormal = false;
 
-	if (flagPidDump != true) {
+	if (!flagPidDump) {
 		flagHelp = true;
 	}
 
-
-	if (flagEcoMode)
-		options.ecoMode = true;
-
-	if (flagNotPage)
-		options.pagination = false;
-
-	if (flagNotPage && flagEcoMode)
-	{
+	if (flagEcoMode && flagNotPage) {
 		fprintf(stderr, "You cannot select Eco Mode and Not Pagination at the same time.\n");
 		exit(0);
 	}
+	options.ecoMode = flagEcoMode;
+	options.pagination = !flagNotPage;
 
-
-	if( flagRawOnly )
-		options.printNormal = true;
-	
-	if( flagAsciiOnly && flagUnicodeOnly )
-	{
-		fprintf(stderr,"Warning. Default conditions extract both unicode and ascii strings. There is no need to use both '-a' and '-u' flags at the same time.\n");
-	}else{
-		if( flagAsciiOnly )
-			options.printAsciiOnly = true;
-		if( flagUnicodeOnly )
-			options.printUnicodeOnly = true;
-	}
-
-	if (flagAsciiOnly != true && flagUnicodeOnly != true && flagRawOnly != true) {
+	if (flagRawOnly) {
 		options.printNormal = true;
 	}
-	
-
+	else {
+		if (flagAsciiOnly && flagUnicodeOnly) {
+			fprintf(stderr, "Warning: Default conditions extract both Unicode and ASCII strings. There is no need to use both '-a' and '-u' flags at the same time.\n");
+		}
+		else {
+			options.printAsciiOnly = flagAsciiOnly;
+			options.printUnicodeOnly = flagUnicodeOnly;
+		}
+		if (!flagAsciiOnly && !flagUnicodeOnly && !flagRawOnly) {
+			options.printNormal = true;
+		}
+	}
 
 	options.minCharacters = minCharacters;
 
-	if( flagHelp )
-	{
-		printf("xxstrings is a tool to dump strings from the memory of a process. Some parts of the code is based on the famous strings2 by Geoff McDonald.\n");
-		printf("This tool has been created by ZaikoARG\n\n");
-		printf("Usage:\n");
-		printf("xxstrings.exe -p <PID> <flags>\n\n");
-		printf("Flags:\n");
-		printf(" -p pid\n\tDefines the Process ID from which the strings will be extracted.\n");
-		printf(" -eco\n\tActivate Eco Mode. This will only use paging in processes with a job size greater than 500 MB.\n");
-		printf(" -notpage\n\tDisables the paging that is enabled by default.\n");
-		printf(" -raw\n\tOnly prints the regular ascii/unicode strings.\n");
-		printf(" -a\n\tPrints only ascii strings.\n");
-		printf(" -u\n\tPrints only unicode strings.\n");
-		printf(" -l [numchars]\n\tMinimum number of characters that is\n\ta valid string. Default is 4.\n");
-	}else{
-		// Create the string parser object
-		string_parser* parser = new string_parser(options);
+	if (flagHelp) {
+		std::cout << "xxstrings is a tool to dump strings from the memory of a process. Some parts of the code are based on the famous strings2 by Geoff McDonald." << std::endl;
+		std::cout << "Usage:" << std::endl;
+		std::cout << "strings.exe -p <PID> <flags>" << std::endl << std::endl;
+		std::cout << "Flags:" << std::endl;
+		std::cout << " -p pid" << std::endl << "\tDefines the Process ID from which the strings will be extracted." << std::endl;
+		std::cout << " -eco" << std::endl << "\tActivate Eco Mode. This will only use paging in processes with a job size greater than 500 MB." << std::endl;
+		std::cout << " -notpage" << std::endl << "\tDisables the paging that is enabled by default." << std::endl;
+		std::cout << " -raw" << std::endl << "\tOnly prints the regular ascii/unicode strings." << std::endl;
+		std::cout << " -a" << std::endl << "\tPrints only ascii strings." << std::endl;
+		std::cout << " -u" << std::endl << "\tPrints only unicode strings." << std::endl;
+		std::cout << " -l [numchars]" << std::endl << "\tMinimum number of characters that is" << std::endl << "\ta valid string. Default is 4." << std::endl;
+	}
+	else {
+		std::unique_ptr<string_parser> parser(new string_parser(options));
 
-		if (flagPidDump)
-		{
-			// Warn if running in 32 bit mode on a 64 bit OS
-			if( Is64BitWindows() && sizeof(void*) == 4 )
-			{
-				fprintf(stderr, "WARNING: You are running a 32-bit version on a 64-bit system.\n\n");
+		if (flagPidDump) {
+			if (Is64BitWindows() && sizeof(void*) == 4) {
+				wcerr << L"WARNING: You are running a 32-bit version on a 64-bit system." << endl;
 			}
 
-			// Elevate strings2 to the maximum privileges
-			getMaximumPrivileges( GetCurrentProcess() );
+			getMaximumPrivileges(GetCurrentProcess());
 
-			// Create a process string dump class
-			process_strings* process = new process_strings(parser);
+			std::unique_ptr<process_strings> process(new process_strings(parser.get()));
 
-			if( flagPidDump )
-			{
-				// Extract all strings from the specified process
-				if( filter != NULL )
-				{
-					// Check the prefix
-					bool isHex = false;
-					wchar_t* prefix = new wchar_t[3];
-					memcpy(prefix, filter, 4);
-					prefix[2] = 0;
+			if (filter != nullptr) {
+				bool isHex = false;
+				std::wstring filterStr(filter);
+				if (filterStr.size() >= 2 && filterStr.substr(0, 2) == L"0x") {
+					filterStr = filterStr.substr(2);
+					isHex = true;
+				}
 
-					if( wcscmp(prefix, L"0x") == 0 )
-					{
-						filter = &filter[2];
-						isHex = true;
-					}
-					delete[] prefix;
-					
-					// Extract the pid from the string
+				try {
 					unsigned int PID;
-					if ((isHex && swscanf_s(filter, L"%x", &PID) > 0) ||
-						(!isHex && swscanf_s(filter, L"%i", &PID) > 0))
-					{
-						// Successfully parsed the PID
-						// Parse the process
+					if ((isHex && std::stoi(filterStr, nullptr, 16)) || (!isHex && (std::stoi(filterStr) > 0)) > 0) {
+						PID = std::stoul(filterStr, nullptr, isHex ? 16 : 10);
 						process->dump_process(PID, options.ecoMode, options.pagination);
 					}
-					else
-					{
-						fwprintf(stderr, L"Failed to parse filter argument as a valid PID: %s.\n", filter);
+					else {
+						wcerr << L"Failed to parse filter argument as a valid PID: " << filterStr << endl;
 					}
-				}else{
-					fwprintf(stderr, L"Error. No Process ID was specified.\n");
+				}
+				catch (const std::invalid_argument&) {
+					wcerr << L"Failed to parse filter argument as a valid PID: " << filterStr << endl;
+				}
+				catch (const std::out_of_range&) {
+					wcerr << L"Failed to parse filter argument as a valid PID: " << filterStr << endl;
 				}
 			}
-
-			delete process;
+			else {
+				wcerr << L"Error. No Process ID was specified." << endl;
+			}
 		}
-		
-		// Cleanup the string parser
-		delete parser;
 	}
-	
 
 	return 0;
 }
-
